@@ -1,5 +1,6 @@
 """Fetch the latest releases from your favorite artists"""
 
+import time
 import deezer
 from notion.client import NotionClient
 from notion.block import TodoBlock, DividerBlock, ImageBlock
@@ -37,7 +38,7 @@ def get_new_releases():
     now = datetime.now()
     print(f"Fetching releases from last {NB_DAYS_DELTA} days...")
 
-    for artist_request in user.get_artists():
+    for artist_request in user.get_artists(limit=100):
         # artist search
         artist_list = client.search(artist_request.name, relation='artist')
         # if no result
@@ -48,13 +49,13 @@ def get_new_releases():
         # if bad result
         if artist_request.name != artist_result.name:  # often because artist_request makes compilations
             artist_result = get_artist_from_album_search(client, artist_request.name)
-
         for album in artist_result.get_albums():
             release_date = datetime.strptime(album.release_date, '%Y-%m-%d')
             delta = now - release_date
             delta_limit = timedelta(days=NB_DAYS_DELTA)
             if delta < delta_limit:
                 new_releases.append(album)
+        time.sleep(.1)  # to avoid 'API request return error'
 
     nb_releases = len(new_releases)
     if nb_releases == 0:
