@@ -2,12 +2,17 @@
 
 import time
 import deezer
+import argparse
 from notion.client import NotionClient
 from notion.block import TodoBlock, DividerBlock, ImageBlock
 from datetime import datetime, timedelta
 from auth import USER_ID, TOKEN_V2, PAGE_URL
 
-NB_DAYS_DELTA = 7  # how far you want to go in time
+parser = argparse.ArgumentParser(description="Fetch the latest releases from your favorite artists")
+parser.add_argument("-d", "--nb-days", default=7, help="how far you want to go in days", type=int)
+args = parser.parse_args()
+
+nb_days_delta = args.nb_days
 
 
 ## UTILS ##
@@ -36,7 +41,7 @@ def get_new_releases():
     print(f"## Hello, {user.name}! ##\n")
 
     now = datetime.now()
-    print(f"Fetching releases from last {NB_DAYS_DELTA} days...")
+    print(f"Fetching releases from last {nb_days_delta} days...")
 
     for artist_request in user.get_artists(limit=100):
         # artist search
@@ -52,7 +57,7 @@ def get_new_releases():
         for album in artist_result.get_albums():
             release_date = datetime.strptime(album.release_date, '%Y-%m-%d')
             delta = now - release_date
-            delta_limit = timedelta(days=NB_DAYS_DELTA)
+            delta_limit = timedelta(days=nb_days_delta)
             if delta < delta_limit:
                 new_releases.append(album)
         time.sleep(.1)  # to avoid 'API request return error'
