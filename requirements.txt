@@ -1,2 +1,2 @@
-deezer
+deezer-python
 notion
