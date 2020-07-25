@@ -9,18 +9,27 @@ from notion.collection import NotionDate
 from datetime import datetime, timedelta, date, timezone
 from auth import USER_ID, TOKEN_V2, COLLECTION_URL
 
-parser = argparse.ArgumentParser(description="Fetch the latest releases from your favorite artists")
-parser.add_argument("-d", "--nb-days", default=2, help="how far you want to go (days)", type=int)
-parser.add_argument("-u", "--utc-offset", default=2, help="offset with UTC time zone (hours)", type=int)
-parser.add_argument("-r", "--remove-checked", action="store_true", help="remove checked elements even if they are recent")
-args = parser.parse_args()
 
+## MAIN ##
 
-nb_days = args.nb_days
-nb_days_delta = timedelta(days=nb_days)
-utc_offset = args.utc_offset
-utc_offset_delta = timedelta(hours=utc_offset)
-remove_all_checked = args.remove_checked
+def parse_args(args):
+    parser = argparse.ArgumentParser(description="Fetch the latest releases from your favorite artists")
+    parser.add_argument("-d", "--nb-days", default=2, help="how far you want to go (days)", type=int)
+    parser.add_argument("-u", "--utc-offset", default=2, help="offset with UTC time zone (hours), default UTC+2", type=int)
+    parser.add_argument("-r", "--remove-all-checked", action="store_true", help="remove checked elements even if they are recent")
+    return parser.parse_args(args)
+
+def main(args):
+    # args
+    args = parse_args(args)
+    nb_days = args.nb_days
+    nb_days_delta = timedelta(days=nb_days)
+    utc_offset = args.utc_offset
+    utc_offset_delta = timedelta(hours=utc_offset)
+    remove_all_checked = args.remove_all_checked
+    # main
+    new_releases = get_new_releases(nb_days, nb_days_delta)
+    add_to_notion(new_releases, nb_days_delta, utc_offset_delta, remove_all_checked)
 
 
 ## DEEZER ##
@@ -52,7 +61,7 @@ def get_artist_from_album_search(client, artist_request_name):
     artist_result = track_result.artist
     return artist_result
 
-def get_new_releases():
+def get_new_releases(nb_days, nb_days_delta):
     """Fetch latest releases from Deezer."""
     new_releases = []
     client = deezer.Client()
@@ -94,7 +103,7 @@ def get_new_releases():
 
 ## NOTION.SO ##
 
-def remove_old_checked_elements(cv):
+def remove_old_checked_elements(cv, nb_days_delta, utc_offset_delta, remove_all_checked):
     """Browse the table and remove checked (listened) elements from last week."""
     now = datetime.now()
     nb_cleaned = 0
@@ -116,7 +125,7 @@ def already_in_database(cv, album_dict):
             return True
     return False
 
-def add_to_notion(new_releases):
+def add_to_notion(new_releases, nb_days_delta, utc_offset_delta, remove_all_checked):
     """Add new releases to the Notion.so page in the right collection."""
     print(section(f"Adding to Notion..."))
     client = NotionClient(token_v2=TOKEN_V2)
@@ -155,7 +164,7 @@ def add_to_notion(new_releases):
         print(info(f"Added {nb_releases_to_add} albums to Notion.so!"))
 
     # remove checked elements of last week
-    remove_old_checked_elements(cv)
+    remove_old_checked_elements(cv, nb_days_delta, utc_offset_delta, remove_all_checked)
     print()
     print(info("Done!"))
 
@@ -183,7 +192,6 @@ class NoGenreFound(Exception):
     pass
 
 
-
 if __name__ == "__main__":
-    new_releases = get_new_releases()
-    add_to_notion(new_releases)
+    import sys
+    main(sys.argv[1:])
