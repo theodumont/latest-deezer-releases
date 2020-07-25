@@ -14,7 +14,7 @@ from auth import USER_ID, TOKEN_V2, COLLECTION_URL
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description="Fetch the latest releases from your favorite artists")
-    parser.add_argument("-d", "--nb-days", default=2, help="how far you want to go (days)", type=int)
+    parser.add_argument("-d", "--nb-days", default=7, help="how far you want to go (days)", type=int)
     parser.add_argument("-u", "--utc-offset", default=2, help="offset with UTC time zone (hours), default UTC+2", type=int)
     parser.add_argument("-r", "--remove-all-checked", action="store_true", help="remove checked elements even if they are recent")
     return parser.parse_args(args)
