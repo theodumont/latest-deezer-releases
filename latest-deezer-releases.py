@@ -59,10 +59,10 @@ def get_new_releases():
 
     # get user
     user = client.get_user(USER_ID)
-    print(f"## Hello, {user.name}! ##\n")
+    print(title(f"Hello, {user.name}!"))
 
     now = datetime.now()
-    print(f"------\tFetching releases from last {nb_days} days...")
+    print(section(f"Fetching releases from last {nb_days} days..."))
 
     for artist_request in user.get_artists(limit=100):
         # artist search
@@ -84,18 +84,18 @@ def get_new_releases():
 
     nb_releases = len(new_releases)
     if nb_releases == 0:
-        print("-info-\tNo release found :(")
+        print(info("No release found :("))
     elif nb_releases == 1:
-        print(f"-info-\tOne release found in last {nb_days} days!")
+        print(info(f"One release found in last {nb_days} days!"))
     else:
-        print(f"-info-\t{nb_releases} releases found in last {nb_days} days!")
+        print(info(f"{nb_releases} releases found in last {nb_days} days!"))
     return new_releases
 
 
 ## NOTION.SO ##
 
 def remove_old_checked_elements(cv):
-    """"""
+    """Browse the table and remove checked (listened) elements from last week."""
     now = datetime.now()
     nb_cleaned = 0
 
@@ -107,9 +107,10 @@ def remove_old_checked_elements(cv):
                 nb_cleaned += 1
 
     if nb_cleaned >= 1:
-        print(f"-info-\tCleaned 1 checked element." if nb_cleaned == 1 else f"-info-\tCleaned {nb_cleaned} checked elements.")
+        print(info(f"Cleaned 1 checked element.") if nb_cleaned == 1 else info(f"Cleaned {nb_cleaned} checked elements."))
 
 def already_in_database(cv, album_dict):
+    """Check if an album is already in Notion using the primary key 'url'."""
     for row in cv.collection.get_rows():
         if row.url == album_dict["url"]:
             return True
@@ -117,7 +118,7 @@ def already_in_database(cv, album_dict):
 
 def add_to_notion(new_releases):
     """Add new releases to the Notion.so page in the right collection."""
-    print(f"------\tAdding to Notion...")
+    print(section(f"Adding to Notion..."))
     client = NotionClient(token_v2=TOKEN_V2)
     cv = client.get_collection_view(COLLECTION_URL)
 
@@ -142,27 +143,45 @@ def add_to_notion(new_releases):
                 except NoGenreFound:
                     pass
                 except ValueError:  # i.e. if genre does not exist yet in Notion
-                    print(f"-warn-\tPlease add genre {value} to database!")
+                    print(warn(f"Please add genre {value} to database!"))
             else:
                 setattr(row, key, value)
 
     if nb_releases_to_add == 0:
-        print("-info-\tAlbums already added.")
+        print(info("Albums already added."))
     elif nb_releases_to_add == 1:
-        print("-info-\tAdded 1 album to Notion.so!")
+        print(info("Added 1 album to Notion.so!"))
     else:
-        print(f"-info-\tAdded {nb_releases_to_add} albums to Notion.so!")
+        print(info(f"Added {nb_releases_to_add} albums to Notion.so!"))
 
     # remove checked elements of last week
     remove_old_checked_elements(cv)
     print()
-    print("-info-\tDone!")
+    print(info("Done!"))
 
 
-## EXCEPTIONS
+## EXCEPTIONS AND DISPLAY
+
+def title(string):
+    """Return a title string."""
+    return "## " + string + " ##\n"
+
+def section(string):
+    """Return a section string."""
+    return "------\t" + string
+
+def info(string):
+    """Return an info string."""
+    return "-info-\t" + string
+
+def warn(string):
+    """Return a warning string."""
+    return "-warn-\t" + string
 
 class NoGenreFound(Exception):
+    """When Deezer doesn't find any genre for an album."""
     pass
+
 
 
 if __name__ == "__main__":
